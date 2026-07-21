@@ -1,0 +1,113 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Zytek Solutions — Apache / cPanel / Shared Hosting Config
+# Place this file in the root of your public_html directory (same folder as index.html)
+# ─────────────────────────────────────────────────────────────────────────────
+
+Options -Indexes -MultiViews
+ServerSignature Off
+
+# ── Rewrite engine (SPA fallback) ────────────────────────────────────────────
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Allow HTTPS upgrade
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # www → non-www (optional — remove if you prefer www)
+    # RewriteCond %{HTTP_HOST} ^www\.zyteksolutions\.com [NC]
+    # RewriteRule ^ https://zyteksolutions.com%{REQUEST_URI} [L,R=301]
+
+    # Don't rewrite real files or directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    # Don't rewrite assets
+    RewriteCond %{REQUEST_URI} !^/assets/
+    # Fallback all routes to index.html (SPA routing)
+    RewriteRule ^ /index.html [L]
+</IfModule>
+
+# ── Security headers ─────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header always set X-Frame-Options "DENY"
+
+    # Prevent MIME sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Legacy XSS filter
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Referrer policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Permissions policy
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+
+    # HTTPS enforcement
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+    # Cross-Origin isolation
+    Header always set Cross-Origin-Opener-Policy "same-origin"
+    Header always set Cross-Origin-Resource-Policy "same-origin"
+
+    # Content Security Policy
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+
+    # Remove server signature headers
+    Header always unset X-Powered-By
+    Header always unset Server
+</IfModule>
+
+# ── Disable access to sensitive files ────────────────────────────────────────
+<FilesMatch "(^\.env|\.env\.|\.git|\.htaccess|\.htpasswd|package\.json|package-lock\.json|pnpm-lock\.yaml|tsconfig|vite\.config|ecosystem\.config|docker-compose|Dockerfile|README\.md)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ── Caching — hashed assets (Vite content-hash filenames) ────────────────────
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # Hashed assets — 1 year
+    <FilesMatch "\.(js|css|woff2|woff|ttf|eot)$">
+        ExpiresDefault "access plus 1 year"
+        Header append Cache-Control "public, immutable"
+    </FilesMatch>
+
+    # Images — 1 week
+    <FilesMatch "\.(png|jpg|jpeg|gif|webp|avif|ico|svg)$">
+        ExpiresDefault "access plus 1 week"
+        Header append Cache-Control "public"
+    </FilesMatch>
+
+    # Manifests and data files — 1 day
+    <FilesMatch "\.(webmanifest|json|xml|txt)$">
+        ExpiresDefault "access plus 1 day"
+    </FilesMatch>
+
+    # HTML — always revalidate
+    <FilesMatch "\.html$">
+        ExpiresDefault "access plus 0 seconds"
+        Header set Cache-Control "public, max-age=0, must-revalidate"
+    </FilesMatch>
+</IfModule>
+
+# ── Compression ───────────────────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE image/svg+xml application/xml
+    AddOutputFilterByType DEFLATE font/woff2 font/woff
+</IfModule>
+
+# ── MIME types ────────────────────────────────────────────────────────────────
+<IfModule mod_mime.c>
+    AddType application/javascript .js .mjs
+    AddType text/css .css
+    AddType image/svg+xml .svg
+    AddType font/woff2 .woff2
+    AddType font/woff .woff
+    AddType application/manifest+json .webmanifest
+</IfModule>

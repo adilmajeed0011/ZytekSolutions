@@ -1,0 +1,25 @@
+{
+  "name": "zytek-solutions",
+  "version": "1.0.0",
+  "description": "Zytek Solutions — Production Node.js server for the static SPA",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:pm2": "pm2 start ecosystem.config.cjs --env production",
+    "start:dev": "NODE_ENV=development node server.js",
+    "preview": "node server.js",
+    "production": "NODE_ENV=production node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.5.0",
+    "nodemailer": "^9.0.0",
+    "pino": "^9.0.0"
+  },
+  "_instructions": "Rename this file to package.json on your production host, then run: npm install --omit=dev"
+}
